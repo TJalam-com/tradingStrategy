@@ -1,0 +1,101 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © badshah_e_alam
+//@version=4
+// 1. Define strategy settings//
+strategy(title="Strategy doji sma longer time frame", overlay=true,pyramiding=0, initial_capital=100000,
+     commission_type=strategy.commission.cash_per_order,
+     commission_value=4, slippage=2,
+     calc_on_every_tick=true)
+
+
+fastMALen = input(title="Fast MA Length", defval=9)
+slowMALen = input(title="Slow MA Length", defval=50)
+
+usePosSize = 100000
+riskPerc   = .18
+
+// 2. Calculate strategy values
+fastMA = ema(close, fastMALen)
+slowMA = sma(close, slowMALen)
+
+riskEquity  = (riskPerc / 100) * strategy.equity
+atrCurrency = (atr(20) * syminfo.pointvalue)
+posSize     = usePosSize ? floor(riskEquity / atrCurrency) : 1
+
+// 3. Output strategy data
+plot(series=fastMA, color=color.teal, linewidth=2, title="Fast MA")
+plot(series=slowMA, color=color.orange, linewidth=2, title="Slow MA")
+
+bgColour = crossover(fastMA, slowMA) ? color.green :crossunder(fastMA, slowMA) ? color.red :     na
+bgcolor(color=bgColour, transp=90)
+
+
+//determin the trend start
+COMPA1=ema(close[1],9)
+COMPA2 = sma(close[1],50)
+
+COMPA3 = ema(close[3],9)
+COMPA4 = sma(close[3],50)
+
+COMPA5 = ema(close[6],9)
+COMPA6 = sma(close[6],50)
+
+COMPA7 = ema(close[9],9)
+COMPA8 = sma(close[9],50)
+
+COMPA9 = ema(close[12],9)
+COMPA10 = sma(close[12],50)
+
+COMPA11 = ema(close[15],9)
+COMPA12 = sma(close[15],50)
+
+A = (COMPA2-COMPA1) /COMPA2
+B = (COMPA4-COMPA3) /COMPA4
+C = (COMPA6-COMPA5) /COMPA6
+D = (COMPA8-COMPA7) /COMPA8
+E = (COMPA10-COMPA9) /COMPA10
+F = (COMPA12-COMPA11) /COMPA12
+
+A1 = (COMPA2-COMPA1) /COMPA1
+B1 = (COMPA4-COMPA3) /COMPA3
+C1 = (COMPA6-COMPA5) /COMPA5
+D1 = (COMPA8-COMPA7) /COMPA7
+E1 = (COMPA10-COMPA9) /COMPA9
+F1 = (COMPA12-COMPA11) /COMPA11
+Precision = input(0.15, minval=0.0001, title="Doji's Max Body size")
+barcolor(abs(open - close) <= (high - low) * Precision ? color.yellow : na)
+
+doji1=(abs(open - close) <= (high - low) * Precision ? 1:0)
+doji2=(abs(open[1] - close[1]) <= (high[1] - low[1]) * Precision ? 1:0)
+doji3=(abs(open[2] - close[2]) <= (high[2] - low[2]) * Precision ? 1:0)
+doji4=(abs(open[3] - close[3]) <= (high[3] - low[3]) * Precision ? 1:0)
+doji5=(abs(open[4] - close[4]) <= (high[4] - low[4]) * Precision ? 1:0)
+doji6=(abs(open[5] - close[5]) <= (high[5] - low[5]) * Precision ? 1:0)
+
+slope_pos=open[10]-open
+slope_neg=open-open[10]
+poss=ema(close,9)-sma(close,50)
+negg=sma(close,50)-ema(close,9)
+
+// 4. Determine long trading condition
+enterLong = ((poss>0 and A<0 and A> -0.00618 and B<0 and B> -0.00618 and C<0 and C> -0.00618 and D<0 and D> -0.00618 and E<0 and F<0 and slope_pos>0)and(((doji1==1) or (doji2==1) or (doji3==1) or (doji4==1) or (doji5==1)or (doji6==1) ) and (crossover(cci(open[4],20),100) or crossover(cci(open[5],20),100) ))and barstate.ishistory)
+// 5. Code short trading conditions
+enterShort = ((negg>0 and A1>0 and A1< 0.00618 and B1>0 and B1< 0.00618 and C1>0 and C1< 0.00618 and D1>0 and D1< 0.00618 and E1>0 and F1>0 and slope_neg>0)and(((doji1==1) or (doji2==1) or (doji3==1) or (doji4==1) or (doji5==1)or (doji6==1) )and (crossunder(cci(open[4],20),-100) or crossunder(cci(open[5],20),-100) ))and barstate.ishistory)
+
+// 6. Submit entry orders
+if (enterLong)
+    strategy.entry(id="EL", long=true, qty=posSize)
+
+if (enterShort)
+    strategy.entry(id="ES", long=false, qty=posSize)
+
+ema200 = ema(close, 200)
+ema50= ema(close, 50)
+plot(ema200)
+
+exit_long=crossunder(ema50, ema200)
+exit_short=crossover(ema50,ema200)
+
+strategy.cancel(id="EL",when=exit_long)
+strategy.cancel(id="ES",when=exit_short)
+
