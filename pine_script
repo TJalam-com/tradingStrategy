@@ -7,6 +7,9 @@ strategy(title="Strategy doji sma longer time frame", overlay=true,pyramiding=0,
      commission_value=4, slippage=2,
      calc_on_every_tick=true)
 
+ema200 = ema(close, 200)
+ema50= ema(close, 50)
+plot(ema200)
 
 fastMALen = input(title="Fast MA Length", defval=9)
 slowMALen = input(title="Slow MA Length", defval=50)
@@ -88,10 +91,6 @@ if (enterLong)
 
 if (enterShort)
     strategy.entry(id="ES", long=false, qty=posSize)
-
-ema200 = ema(close, 200)
-ema50= ema(close, 50)
-plot(ema200)
 
 exit_long=crossunder(ema50, ema200)
 exit_short=crossover(ema50,ema200)
